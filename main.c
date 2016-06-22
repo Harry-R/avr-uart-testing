@@ -18,19 +18,19 @@ uint8_t command = 0;
 
 void uart_init() {
 	 // Enable receiver pin in UART register
-	 UCSRB |= (1<<RXEN);
+	 UCSR0B |= (1<<RXEN0);
 	 // set frame format: 8N1
-	 UCSRC = (1<<URSEL)|(1 << UCSZ1)|(1 << UCSZ0);
+	 UCSR0C = (1 << UCSZ01)|(1 << UCSZ00);
 	 // write Baud rate to high and low baud register
-	 UBRRH = UBRR_VAL >> 8;
-	 UBRRL = UBRR_VAL & 0xFF;
+	 UBRR0H = UBRR_VAL >> 8;
+	 UBRR0L = UBRR_VAL & 0xFF;
 }
 
 uint8_t uart_readc() {
 	// wait until input is available
-    while (!(UCSRA & (1<<RXC)));
+    while (!(UCSR0A & (1<<RXC0)));
     // read input from UDR and return
-    return UDR;
+    return UDR0;
 }
 
 int main (void) {
@@ -41,7 +41,7 @@ int main (void) {
 
 	while(1) {
 		// If input char is available
-		if (UCSRA & (1<<RXC)) {
+		if (UCSR0A & (1<<RXC0)) {
 			command = uart_readc();
 		}
 		// Check command
