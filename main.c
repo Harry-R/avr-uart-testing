@@ -5,7 +5,9 @@
 #include <avr/io.h>
 #include <util/delay.h>
 
-#define F_CPU 16000000UL
+#ifndef F_CPU
+ #define F_CPU 16000000UL
+#endif
 
 #define BLINK_DELAY_MS 1000
 
@@ -44,9 +46,9 @@ int main (void) {
 		}
 		// Check command
 		if (command == 1) {
-			PORTB == (0b00100000);
+			PORTB = (0b00100000);
 		} else {
-			PORTB == (0b00000000);
+			PORTB = (0b00000000);
 		}
 	}
 }
