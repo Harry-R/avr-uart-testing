@@ -11,7 +11,7 @@
 
 #define BLINK_DELAY_MS 1000
 
-#define BAUDRATE 38400
+#define BAUDRATE 9600UL
 #define UBRR_VAL (((F_CPU+BAUDRATE * 8)/(BAUDRATE * 16) - 1))
 
 uint8_t command = 0;
@@ -19,6 +19,7 @@ uint8_t command = 0;
 void uart_init() {
 	 // Enable receiver pin in UART register
 	 UCSR0B |= (1<<RXEN0);
+	 UCSR0B |= (1<<TXEN0);
 	 // set frame format: 8N1
 	 UCSR0C = (1 << UCSZ01)|(1 << UCSZ00);
 	 // write Baud rate to high and low baud register
@@ -33,22 +34,26 @@ uint8_t uart_readc() {
     return UDR0;
 }
 
+void uart_writec(uint8_t response) {
+	// wait until sending is possible */
+	while (!(UCSR0A & (1<<UDRE0))) {
+	}
+	// write to UDR
+	UDR0 = response;
+}
+
 int main (void) {
-	// set pin 5 of PORTB for output
-	DDRB |= (1 << (5));
 
 	uart_init();
 
 	while(1) {
 		// If input char is available
 		if (UCSR0A & (1<<RXC0)) {
+			// read command
 			command = uart_readc();
-		}
-		// Check command
-		if (command == 1) {
-			PORTB = (0b00100000);
-		} else {
-			PORTB = (0b00000000);
+			// send response for debugging
+			uart_writec(command);
+
 		}
 	}
 }
