@@ -16,6 +16,7 @@
 #define UBRR_VAL (((F_CPU+BAUDRATE * 8)/(BAUDRATE * 16) - 1))
 
 #define UART_MAX_COMMAND_LENGTH 10U
+#define COMMAND_START 'S'
 #define COMMAND_END 'E'
 
 volatile uint8_t uart_rcv_complete = 0;
@@ -59,20 +60,23 @@ ISR(USART_RX_vect) {
 	uint8_t nextChar;
 	// read data
 	nextChar = UDR0;
-	// if buffer is not in use
-	if (uart_rcv_complete == 0) {
-		uart_buffer[uart_rcv_count] = nextChar;
-		uart_rcv_count++;
-		// write to UART command array if max length and command end are not reached
-		if (uart_rcv_count >= UART_MAX_COMMAND_LENGTH || nextChar == COMMAND_END) {
-			// copy uart_buffer into command
-			for (uint8_t i = 0; i < uart_rcv_count; i++) {
+
+	switch(nextChar) {
+		case COMMAND_START:
+			uart_rcv_count = 0;
+			break;
+		case COMMAND_END:
+			for (uint8_t i = 0; i < (uart_rcv_count - 1); i++) {
 				command[i] = uart_buffer[i];
 			}
-			// reset counter, set complete flag
-			uart_rcv_count = 0;
 			uart_rcv_complete = 1;
-		}
+			break;
+		default:
+			if (uart_rcv_count > UART_MAX_COMMAND_LENGTH) {
+				return;
+			}
+			uart_buffer[uart_rcv_count] = nextChar;
+			uart_rcv_count++;
 	}
 }
 
@@ -89,23 +93,15 @@ int main(void) {
 			uint8_t i;
 			// write from buffer to command array
 			for (i = 0; i <= UART_MAX_COMMAND_LENGTH; i++) {
-				if (command[i] != COMMAND_END) {
+				if (command[i] != 0x00) {
 					uart_writechar(command[i]);
 				} else {
 					break;
 				}
+				command[i] = 0x00;
 			}
 			// reset complete flag
 			uart_rcv_complete = 0;
-			int j;
-			// send back for debugging
-			for (j = 0; j <= UART_MAX_COMMAND_LENGTH; j++) {
-				if (command[i] != COMMAND_END) {
-					uart_writechar(command[j]);
-				} else {
-					break;
-				}
-			}
 		}
 	}
 }
