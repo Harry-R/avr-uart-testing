@@ -66,13 +66,19 @@ ISR(USART_RX_vect) {
 			uart_rcv_count = 0;
 			break;
 		case COMMAND_END:
-			for (uint8_t i = 0; i < (uart_rcv_count - 1); i++) {
+			for (uint8_t i = 0; i < (uart_rcv_count); i++) {
+				// write from UART buffer to command array
 				command[i] = uart_buffer[i];
+				uart_buffer[i] = 0x00;
 			}
 			uart_rcv_complete = 1;
 			break;
 		default:
 			if (uart_rcv_count > UART_MAX_COMMAND_LENGTH) {
+				// reset UART buffer
+				for (uint8_t i = 0; i <= UART_MAX_COMMAND_LENGTH; i++) {
+					uart_buffer[i] = 0x00;
+				}
 				return;
 			}
 			uart_buffer[uart_rcv_count] = nextChar;
@@ -91,7 +97,7 @@ int main(void) {
 		// handle received command
 		if (uart_rcv_complete == 1) {
 			uint8_t i;
-			// write from buffer to command array
+			// send command array back for debugging
 			for (i = 0; i <= UART_MAX_COMMAND_LENGTH; i++) {
 				if (command[i] != 0x00) {
 					uart_writechar(command[i]);
